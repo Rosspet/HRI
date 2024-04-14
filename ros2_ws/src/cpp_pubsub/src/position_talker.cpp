@@ -33,11 +33,13 @@ public:
   double p[3] {0.0, 0.0, 0.0};
   double v[3] {0.0, 0.0, 0.0};
   double f[3] {0.0, 0.0, 0.0};
-  double K[3] {200.0, 50.0, 50.0};     //////////////////// -> this is the initial gain vector K, will be changed after a few seconds!
-  double C[3] {5.0, 5.0, 5.0};      //////////// -> damping vector C, having values higher than 5 will likely cause vibrations
+  // double K[3] {200.0, 100.0, 100.0};     //////////////////// -> this is the initial gain vector K, will be changed after a few seconds!
+  double K[3] {250.0, 100.0, 140.0};     //////////////////// -> this is the initial gain vector K, will be changed after a few seconds!
+  // double C[3] {5.0, 5.0, 5.0};      //////////// -> damping vector C, having values higher than 5 will likely cause vibrations
+  double C[3] {10.0, 10.0, 10.0};      //////////// -> damping vector C, having values higher than 5 will likely cause vibrations
   int choice;
 
-  const int pub_freq = 500;    // publishing rate in [Hz]
+  const int pub_freq = 200;    // publishing rate in [Hz]
 
   ///////// -> this is the centering / starting Falcon pos, but is NOT THE ORIGIN => ORIGIN IS ALWAYS (0, 0, 0)
   ///////// -> max bounds are around +-0.05m (5cm)
@@ -49,7 +51,7 @@ public:
   
 
   // sine curve's first point is currently all the same
-  std::vector<double> first_point {0.06, -0.16, -0.01};
+  std::vector<double> first_point {0.00, 0.00, 0.00};
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -74,13 +76,13 @@ public:
     print_params();
 
     // update first point if not using depth
-    if (use_depth == 0) first_point = {0.01, -0.16, -0.01};
+    if (use_depth == 0) first_point = {0.00, -0.0, -0.00};
 
     // update centering position using "post_point" computed above
     for (size_t i=0; i<3; i++) centering.at(i) = first_point.at(i) / mapping_ratio;
 
     // publisher
-    publisher_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("falcon_position", 10);
+    publisher_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("falcon_position", 1);
     timer_ = this->create_wall_timer(2ms, std::bind(&PositionTalker::timer_callback, this));       ///////// publishing at 500 Hz /////////
   }
 
@@ -97,8 +99,11 @@ private:
       // gradually perform centering {in increasing levels of K = 1000 -> K = 2000, after 1 -> 2 seconds}
       for (int i=0; i<3; i++) f[i] = - K[i] * (p[i] - centering[i]) - C[i] * v[i];
     } else {
+      // printf("Centering position: x = %.3f, y = %.3f, z = %.3f\n", centering[0], centering[1], centering[2]);
       switch (choice) {
         case 0: for (int i=0; i<3; i++) f[i] = 0; break;
+        // print centre position
+        
         case 1: for (int i=0; i<1; i++) f[i] = - K[i] * (p[i] - centering[i]) - C[i] * v[i]; break;
         case 2: for (int i=0; i<2; i++) f[i] = - K[i] * (p[i] - centering[i]) - C[i] * v[i]; break;
         case 3: for (int i=0; i<3; i++) f[i] = - K[i] * (p[i] - centering[i]) - C[i] * v[i]; break;
@@ -148,12 +153,12 @@ private:
     // }
 
     count++;
-    if (count > count_thres1) {
-      K[0] = 500.0; K[1] = 250.0; K[2] = 250.0;
-    }
-    if (count > count_thres2) {
-      K[0] = 2000.0; K[1] = 1500.0; K[2] = 1500.0;
-    }
+    // if (count > count_thres1) {
+    //   K[0] = 500.0; K[1] = 250.0; K[2] = 250.0;
+    // }
+    // if (count > count_thres2) {
+    //   K[0] = 2000.0; K[1] = 1500.0; K[2] = 1500.0;
+    // }
 
   }
 
@@ -223,7 +228,7 @@ int main(int argc, char * argv[])
   // {x, y, z} = {1, 2, 3} DOFS = {in/out, left/right, up/down}
   // positive axes directions are {out, right, up}
 
-  int choice = 0;
+  int choice = 3;
 
   ///////////////// CHOOSE YOUR MODE! /////////////////
 
